@@ -1,0 +1,75 @@
+CS6210 Fall2024 Project 3 Readme (yyang998)
+
+
+
+1. Communication Pipelines in Store:
+In this work, a class OurStore is implemented in store.cc and there are two sub-classes implemented in OurStore to represent Server and Client sides of OurStore. The general process of communications is illustrated in the scheme below:
+
+                                               OurStore
+         getProducts(ProductQuery)      =======================   getProductBid(BidQuery)
+User <--------------------------------> Server -------- Clients <------------------------> Vendors
+      ProductReply{list of ProductInfo} =======================          BidReply        
+
+1.1. class StoreServer is the Server side of OurStore:
+     - StoreServer is in charge of the async communications between OurStore and Users.
+     - StoreServer receives requests from Users, and sends replies of requests to Users.
+1.2. class StoreClientNonUser is the Client side of OurStore:
+     - StoreClientNonUser is in charge of the async communications between OurStore and Vendors.
+     - StoreClientNonUser sends requests to Vendors, and receives replies of requests from Vendors.
+1.3. The detailed explanation of the communications of Server and Client (StoreServer and StoreClientNonUser) sides of OurStore:
+     A threadpool is created based on the number of maximum threads. Upon receiving a request from User, a thread from our threadpool is assigned to handle the task required by the current request:
+        Step 1 - StoreServer offers async service, it receives a getProducts(ProductQuery) request from User, and obtains the product name that the user requests from ProductQuery;
+        Step 2 - Iterate Vendors (vendor_addrs), for each Vendor:
+            Step 2a - StoreServer creates a new StoreClientNonUser object and call GetProductBidFromVendor() method with the name of the requested product in the StoreClientNonUser object;
+            Step 2b - Inside GetProductBidFromVendor(), BidQuery request is prepared and the async client call getProductBid(BidQuery) is sent to current Vendor; After getting the reply BidReply from the Vendor, GetProductBidFromVendor() functions returns the BidReply to StoreServer.
+            Step 2c - StoreServer takes BidReply and converts it to ProductInfo;
+            Step 2d - StoreServer add current ProductInfo from current Vendor to ProductReply, which is a list of ProductInfo from different vendors;
+        Step 3 - After getting all the ProductInfo from all Vendors, StoreServer replies asynchronously to the User with the ProductReply of the requested product.
+
+The implementation of this part (Section 1) mostly referenced official grpc async example code of greeter_async_server.cc, greeter_async_client.cc, and greeter_async_client2.cc. All the other references are listed in store.cc.
+
+
+
+
+2. ThreadPool Implementation:
+As introduced in the last section, a threadpool is used to handle the tasks. The threadpool is implemented in threadpool.h. 
+2.1. When a threadpool object is created by OurStore, 
+    - a vector of threads (thPool) is initiated and the number of threads is the max_num_of_threads assigned when calling ./store.
+    - a queue of executable functions (task_queue) is initiated to store the tasks need to be processed by OurStore, and this queue is protected by a mutex with a condition variable to prevent inconsistency.
+    - each thread in thread vector starts spinning on task_queue to wait for a task to execute.
+    - a boolean variable if_stop_current_pool is initialized to indicated if current threadpool should be terminated or not. This variable is set to false at the beginning, and this variable is also protected by the same mutex for task_queue.
+2.2. When a task is added by OurStore via threadpool::add_task(),
+    - Acquire the mutex of task_queue;
+    - Push the task into the back of task_queue;
+    - Release the mutex of task_queue;
+    - Notify all the waiting threads that a task is available for taken via condition variable.
+2.3. Since all the threads are spinning on the task_queue, for each thread,
+    - Acquire the mutex of task_queue;
+    - Spinning and waiting on condition variable for notification when there is no task in task_queue and current threadpool is not terminated;
+    - When got notified, current thread take a task from the front of the task_queue (FIFO);
+    - Release the mutex of task_queue;
+    - Execute the task, which is all the work introduced in Section 1.3. above;
+    - After executing the task, current thread continue spinning to acquire mutex and wait for new task.
+2.4. When the threadpool is terminated (not used in this project), 
+    - Acquire the mutex;
+    - Set if_stop_current_pool to be true to indicate the threadpool should be terminated and no task should be processed anymore; 
+    - Notify all the threads;
+    - Join all the threads.
+
+The implementation of this part (Section 2) mostly referenced https://stackoverflow.com/questions/15752659/thread-pooling-in-c11 and https://stackoverflow.com/a/32593825/22433312. All the other references are listed in threadpool.h.
+
+
+
+
+3. How to run and test OurStore:
+
+./run_vendors <filepath for vendor addresses> &
+
+./store <filepath for vendor addresses> \
+        <ip address:port to listen on for clients> \
+        <maximum number of threads in threadpool>
+
+./run_tests <ip address:port to listen on for clients> \
+            <maximum number of threads in threadpool>
+
+
