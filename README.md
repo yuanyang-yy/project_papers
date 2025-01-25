@@ -1,3 +1,5 @@
+Due to my university's rule prohibiting us from sharing implementation details of the projects, this public repo only contains the reports and papers associated with my projects.
+
 Machine Learning related projects:
 - Hateful Meme Detection: multimodal framework development with State-of-Arts Visual-Linguistic Transformers
 - Overcooked: Cooperative Multi-Agent Deep Reinforcement Learning 
