@@ -1,4 +1,4 @@
-# CS6210 Fall2024 Project 4 README 
+# MapReduce Implementation Readme 
 Yuan Yang (yyang998)
 
 ## Table of Contents
