@@ -1,4 +1,4 @@
-CS6210 Fall2024 Project 3 Readme (yyang998)
+Distributed Price Querying Service for an E-Commerce Store (yuanyang)
 
 
 
