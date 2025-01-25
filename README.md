@@ -2,7 +2,7 @@
 **Author: Yuan Yang**
 Linkedin: https://www.linkedin.com/in/yuan-yang-yyang/
 
-FYI: Due to my university's rule prohibiting us from sharing implementation details of the projects, this public repo only contains the reports and papers associated with my projects. If details are further needed, please email me at yuanyang.yyang@gmail.com.
+FYI: Due to my university's rule prohibiting us from sharing implementation details of the projects, this public repo only contains the reports and papers associated with my projects. If details are further needed, please email me at yuanyang.uu@gmail.com.
 
 Table of Content:
 - [Machine Learning related projects](#machine-learning-related-projects)
